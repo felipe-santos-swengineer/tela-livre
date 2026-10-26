@@ -237,6 +237,40 @@ h1 span {
   line-height: 1.55;
 }
 
+.ended-notice {
+  max-width: 365px;
+  margin: 18px auto 0;
+  padding: 14px 16px;
+  border: 1px solid #ebd7d2;
+  border-radius: 7px;
+  background: #fff7f5;
+  color: #934236;
+  text-align: left;
+}
+
+.ended-notice p {
+  margin: 0 0 11px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.ended-home-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--green-dark);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ended-home-button:focus-visible {
+  outline: 2px solid #95c4a9;
+  outline-offset: 3px;
+}
+
 .screen-card {
   overflow: hidden;
   border: 1px solid #e4e7e2;

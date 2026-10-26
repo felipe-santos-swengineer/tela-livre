@@ -21,6 +21,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+function isHostPresence(value: unknown): boolean {
+  return isRecord(value) && value.role === "host";
+}
+
 function readSignal(value: unknown): Signal | null {
   if (!isRecord(value) || typeof value.type !== "string") return null;
 
@@ -96,6 +100,7 @@ export default function StreamApp() {
   const [viewerCount, setViewerCount] = useState(0);
   const [copied, setCopied] = useState(false);
   const [hasJoinedRoom, setHasJoinedRoom] = useState(false);
+  const [hostEnded, setHostEnded] = useState(false);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -108,6 +113,8 @@ export default function StreamApp() {
   );
   const participantIdRef = useRef("");
   const modeRef = useRef<Mode>(initialRoom ? "watch" : "home");
+  const hostSeenRef = useRef(false);
+  const hostEndedRef = useRef(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
@@ -153,7 +160,8 @@ export default function StreamApp() {
     setViewerCount(peersRef.current.size);
   }, []);
 
-  const stopSession = useCallback(async () => {
+  const stopSession = useCallback(
+    async (options?: { returnHome?: boolean; status?: string }) => {
     const channel = channelRef.current;
     const participantId = participantIdRef.current;
 
@@ -184,11 +192,21 @@ export default function StreamApp() {
     setRemoteStream(null);
     setHasJoinedRoom(false);
     participantIdRef.current = "";
-    modeRef.current = "home";
-    window.history.replaceState(null, "", `${basePath}/`);
-    setMode("home");
-    setStatus("Transmissão encerrada");
-  }, []);
+    if (options?.returnHome !== false) {
+      hostSeenRef.current = false;
+      hostEndedRef.current = false;
+      setHostEnded(false);
+      modeRef.current = "home";
+      window.history.replaceState(null, "", `${basePath}/`);
+      setRoomId("");
+      setMode("home");
+    } else {
+      setHostEnded(true);
+    }
+    setStatus(options?.status ?? "Transmissão encerrada");
+    },
+    [],
+  );
 
   useEffect(() => {
     const peers = peersRef.current;
@@ -215,7 +233,10 @@ export default function StreamApp() {
       const newRoomId = crypto.randomUUID();
       const participantId = "host";
       const channel = supabase.channel(`room:${newRoomId}`, {
-        config: { broadcast: { self: false } },
+        config: {
+          broadcast: { self: false },
+          presence: { key: participantId },
+        },
       });
 
       setRoomId(newRoomId);
@@ -327,7 +348,21 @@ export default function StreamApp() {
         })
         .subscribe((channelStatus) => {
           if (channelStatus === "SUBSCRIBED") {
-            setStatus("Você está ao vivo");
+            void channel
+              .track({ role: "host" })
+              .then((trackStatus) => {
+                if (trackStatus !== "ok") {
+                  throw new Error("Não foi possível anunciar a transmissão na sala.");
+                }
+                setStatus("Você está ao vivo");
+              })
+              .catch((presenceError: unknown) => {
+                setError(
+                  presenceError instanceof Error
+                    ? presenceError.message
+                    : "Não foi possível anunciar a transmissão na sala.",
+                );
+              });
           } else if (channelStatus === "CHANNEL_ERROR") {
             setError("Não foi possível conectar à sala. Confira a configuração do Supabase.");
           }
@@ -361,7 +396,7 @@ export default function StreamApp() {
   };
 
   const joinStream = async () => {
-    if (!roomId || participantIdRef.current) return;
+    if (!roomId || participantIdRef.current || hostEndedRef.current) return;
     setError("");
     setStatus("Conectando à transmissão…");
 
@@ -369,7 +404,10 @@ export default function StreamApp() {
       const supabase = getSupabase();
       const participantId = crypto.randomUUID();
       const channel = supabase.channel(`room:${roomId}`, {
-        config: { broadcast: { self: false } },
+        config: {
+          broadcast: { self: false },
+          presence: { key: participantId },
+        },
       });
       const peer = new RTCPeerConnection({ iceServers });
       peersRef.current.set("host", peer);
@@ -378,6 +416,9 @@ export default function StreamApp() {
       setMode("watch");
       modeRef.current = "watch";
       setHasJoinedRoom(true);
+      setHostEnded(false);
+      hostSeenRef.current = false;
+      hostEndedRef.current = false;
 
       peer.ontrack = (event) => {
         setRemoteStream(event.streams[0] ?? new MediaStream([event.track]));
@@ -406,6 +447,19 @@ export default function StreamApp() {
       };
 
       channel
+        .on("presence", { event: "sync" }, () => {
+          const presenceState = channel.presenceState();
+          const hostIsPresent = (presenceState.host ?? []).some(isHostPresence);
+          if (hostIsPresent) {
+            hostSeenRef.current = true;
+          } else if (hostSeenRef.current && !hostEndedRef.current) {
+            hostEndedRef.current = true;
+            void stopSession({
+              returnHome: false,
+              status: "O anfitrião encerrou a transmissão.",
+            }).then(() => setHostEnded(true));
+          }
+        })
         .on("broadcast", { event: "signal" }, async ({ payload }) => {
           try {
             if (
@@ -451,16 +505,32 @@ export default function StreamApp() {
           }
         })
         .on("broadcast", { event: "end" }, ({ payload }) => {
-          if (isRecord(payload) && payload.sender === "host") {
-            void stopSession().then(() =>
-              setStatus("A transmissão foi encerrada"),
-            );
+          if (isRecord(payload) && payload.sender === "host" && !hostEndedRef.current) {
+            hostEndedRef.current = true;
+            void stopSession({
+              returnHome: false,
+              status: "O anfitrião encerrou a transmissão.",
+            }).then(() => setHostEnded(true));
           }
         })
         .subscribe((channelStatus) => {
           if (channelStatus === "SUBSCRIBED") {
-            setStatus("Entrando na sala…");
-            void send("join", { sender: participantId }).catch(setError);
+            void channel
+              .track({ role: "viewer" })
+              .then(async (trackStatus) => {
+                if (trackStatus !== "ok") {
+                  throw new Error("Não foi possível entrar na lista de espectadores.");
+                }
+                setStatus("Entrando na sala…");
+                await send("join", { sender: participantId });
+              })
+              .catch((presenceError: unknown) => {
+                setError(
+                  presenceError instanceof Error
+                    ? presenceError.message
+                    : "Não foi possível entrar na transmissão.",
+                );
+              });
           } else if (channelStatus === "CHANNEL_ERROR") {
             setError("Não foi possível encontrar a sala. Ela pode ter sido encerrada.");
           }
@@ -472,6 +542,9 @@ export default function StreamApp() {
       channelRef.current = null;
       participantIdRef.current = "";
       setHasJoinedRoom(false);
+      hostSeenRef.current = false;
+      hostEndedRef.current = false;
+      setHostEnded(false);
       setStatus("Transmissão pronta para assistir");
       setError(
         joinError instanceof Error
@@ -559,7 +632,7 @@ export default function StreamApp() {
               Compartilhar minha tela
             </button>
           )}
-          {isWatching && !remoteStream && (
+          {isWatching && !remoteStream && !hostEnded && (
             <button
               className="primary-button"
               onClick={joinStream}
@@ -578,6 +651,17 @@ export default function StreamApp() {
             <p className="error-message" role="alert">
               {error}
             </p>
+          )}
+          {hostEnded && (
+            <div className="ended-notice" role="status">
+              <p>O anfitrião encerrou a transmissão.</p>
+              <button
+                className="ended-home-button"
+                onClick={() => void stopSession()}
+              >
+                Voltar ao início
+              </button>
+            </div>
           )}
           <div className="trust-note">
             <span aria-hidden="true">✳</span>
@@ -672,12 +756,16 @@ export default function StreamApp() {
                   </svg>
                 </div>
                 <strong>
-                  {isWatching
+                  {hostEnded
+                    ? "Transmissão encerrada"
+                    : isWatching
                     ? "A transmissão ainda não começou"
                     : "Sua tela aparece aqui"}
                 </strong>
                 <span>
-                  {isWatching
+                  {hostEnded
+                    ? "O anfitrião encerrou a live; você foi desconectado."
+                    : isWatching
                     ? "Entre na sala quando o transmissor estiver ao vivo."
                     : "Clique em “Compartilhar minha tela” para começar."}
                 </span>
