@@ -278,6 +278,43 @@ h1 span {
   font-size: 10px;
 }
 
+.fullscreen-button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: #69766e;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.fullscreen-button:hover:not(:disabled) {
+  background: #edf3ee;
+  color: var(--green-dark);
+}
+
+.fullscreen-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.fullscreen-button:focus-visible {
+  outline: 2px solid #95c4a9;
+  outline-offset: 2px;
+}
+
+.fullscreen-button svg {
+  width: 17px;
+  height: 17px;
+}
+
 .live-badge {
   display: inline-flex;
   align-items: center;
@@ -304,6 +341,17 @@ h1 span {
   background:
     radial-gradient(ellipse at 50% 45%, rgb(48 72 57 / 24%), transparent 58%),
     #18221e;
+}
+
+.video-stage:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  aspect-ratio: auto;
+  background: #101512;
+}
+
+.video-stage:fullscreen .shared-video {
+  object-fit: contain;
 }
 
 .shared-video {

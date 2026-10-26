@@ -99,6 +99,7 @@ export default function StreamApp() {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const videoStageRef = useRef<HTMLDivElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const peersRef = useRef(new Map<string, RTCPeerConnection>());
@@ -107,6 +108,18 @@ export default function StreamApp() {
   );
   const participantIdRef = useRef("");
   const modeRef = useRef<Mode>(initialRoom ? "watch" : "home");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const updateFullscreen = () => {
+      setIsFullscreen(
+        document.fullscreenElement === videoStageRef.current,
+      );
+    };
+    document.addEventListener("fullscreenchange", updateFullscreen);
+    return () =>
+      document.removeEventListener("fullscreenchange", updateFullscreen);
+  }, []);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -482,6 +495,25 @@ export default function StreamApp() {
     }
   };
 
+  const toggleFullscreen = async () => {
+    const videoStage = videoStageRef.current;
+    if (!videoStage) return;
+
+    try {
+      if (document.fullscreenElement === videoStage) {
+        await document.exitFullscreen();
+      } else {
+        await videoStage.requestFullscreen();
+      }
+    } catch (fullscreenError) {
+      setError(
+        fullscreenError instanceof Error
+          ? "Não foi possível expandir a transmissão. Verifique se o navegador permite tela cheia."
+          : "Falha ao expandir a transmissão.",
+      );
+    }
+  };
+
   const isHost = mode === "host";
   const isWatching = mode === "watch";
 
@@ -569,8 +601,40 @@ export default function StreamApp() {
                 AO VIVO
               </span>
             )}
+            <button
+              className="fullscreen-button"
+              type="button"
+              onClick={toggleFullscreen}
+              disabled={!isHost && !remoteStream}
+              aria-label={
+                isFullscreen ? "Sair da tela cheia" : "Expandir transmissão"
+              }
+              title={isFullscreen ? "Sair da tela cheia" : "Expandir transmissão"}
+            >
+              {isFullscreen ? (
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path
+                    d="M7.25 3.5v3.75H3.5m13 0h-3.75V3.5m0 13v-3.75h3.75m-13 0h3.75v3.75"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path
+                    d="M3.5 7.25V3.5h3.75m5.5 0h3.75v3.75m0 5.5v3.75h-3.75m-5.5 0H3.5v-3.75"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </button>
           </div>
-          <div className="video-stage">
+          <div ref={videoStageRef} className="video-stage">
             {(isHost || remoteStream) && (
               <video
                 ref={videoRef}
