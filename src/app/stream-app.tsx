@@ -737,6 +737,17 @@ export default function StreamApp() {
               Compartilhar minha tela
             </button>
           )}
+          {isHost && (
+            <button
+              className="primary-button stop-stream-button"
+              onClick={() => void stopSession()}
+            >
+              <span className="button-icon" aria-hidden="true">
+                ■
+              </span>
+              Encerrar transmissão
+            </button>
+          )}
           {isWatching && !remoteStream && !hostEnded && (
             <button
               className="primary-button"
@@ -1001,13 +1012,6 @@ export default function StreamApp() {
         </div>
       </section>
 
-      {isHost && (
-        <div className="end-session">
-          <button className="end-button" onClick={() => void stopSession()}>
-            Encerrar transmissão
-          </button>
-        </div>
-      )}
       {isWatching && hasJoinedRoom && (
         <div className="end-session">
           <button className="end-button" onClick={() => void stopSession()}>

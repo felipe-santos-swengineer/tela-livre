@@ -324,6 +324,14 @@ h1 span {
   transform: none;
 }
 
+.stop-stream-button {
+  background: #ad4a3c;
+}
+
+.stop-stream-button:hover {
+  background: #913b30;
+}
+
 .primary-button:focus-visible,
 .copy-button:focus-visible,
 .end-button:focus-visible {
