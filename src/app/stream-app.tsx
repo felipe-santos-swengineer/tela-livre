@@ -102,6 +102,9 @@ export default function StreamApp() {
   const [frameRate, setFrameRate] = useState<FrameRate>(30);
   const [includeAudio, setIncludeAudio] = useState(true);
   const [error, setError] = useState("");
+  const [roomInput, setRoomInput] = useState("");
+  const [isStarting, setIsStarting] = useState(false);
+  const startingRef = useRef(false);
   const [viewerCount, setViewerCount] = useState(0);
   const [copied, setCopied] = useState(false);
   const [hasJoinedRoom, setHasJoinedRoom] = useState(false);
@@ -223,6 +226,9 @@ export default function StreamApp() {
   }, []);
 
   const startHosting = async () => {
+    if (startingRef.current || participantIdRef.current) return;
+    startingRef.current = true;
+    setIsStarting(true);
     setError("");
     setStatus("Solicitando compartilhamento de tela…");
     let capturedStream: MediaStream | null = null;
@@ -230,6 +236,9 @@ export default function StreamApp() {
     const captureHeight = resolution === "720p" ? 720 : 1080;
 
     try {
+      if (!window.isSecureContext || !navigator.mediaDevices?.getDisplayMedia) {
+        throw new Error("O compartilhamento de tela precisa de HTTPS ou localhost e de um navegador compatível no computador.");
+      }
       const supabase = getSupabase();
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
@@ -310,7 +319,9 @@ export default function StreamApp() {
                 type: "candidate",
                 candidate: event.candidate.toJSON(),
               },
-            }).catch(setError);
+            }).catch((signalError: unknown) => {
+              setError(signalError instanceof Error ? signalError.message : "Falha ao enviar dados de conexão.");
+            });
           }
         };
         peer.onconnectionstatechange = () => {
@@ -425,17 +436,44 @@ export default function StreamApp() {
       peersRef.current.clear();
       participantIdRef.current = "";
       modeRef.current = "home";
-      window.history.replaceState(null, "", "/");
+      window.history.replaceState(null, "", `${basePath}/`);
       setRoomId("");
       setLocalStream(null);
       setMode("home");
       setStatus("Pronto para começar");
       setError(
-        startError instanceof Error
+        startError instanceof DOMException && startError.name === "NotAllowedError"
+          ? "Compartilhamento cancelado ou sem permissão. Clique em compartilhar para tentar novamente."
+          : startError instanceof DOMException && startError.name === "NotReadableError"
+            ? "Não foi possível capturar a tela. Verifique as permissões de gravação de tela do sistema."
+          : startError instanceof Error
           ? startError.message
           : "Não foi possível iniciar o compartilhamento de tela.",
       );
+    } finally {
+      startingRef.current = false;
+      setIsStarting(false);
     }
+  };
+
+  const openRoom = () => {
+    const input = roomInput.trim();
+    let id = input;
+    try {
+      id = new URL(input).searchParams.get("room") ?? "";
+    } catch {
+      // A room identifier can also be pasted without the full URL.
+    }
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+      setError("Cole um link de transmissão válido ou o código da sala.");
+      return;
+    }
+    setError("");
+    setRoomId(id);
+    setMode("watch");
+    modeRef.current = "watch";
+    setStatus("Transmissão pronta para assistir");
+    window.history.replaceState(null, "", `${basePath}/?room=${encodeURIComponent(id)}`);
   };
 
   const joinStream = async () => {
@@ -476,7 +514,9 @@ export default function StreamApp() {
               type: "candidate",
               candidate: event.candidate.toJSON(),
             },
-          }).catch(setError);
+          }).catch((signalError: unknown) => {
+            setError(signalError instanceof Error ? signalError.message : "Falha ao enviar dados de conexão.");
+          });
         }
       };
       peer.onconnectionstatechange = () => {
@@ -729,13 +769,26 @@ export default function StreamApp() {
             <button
               className="primary-button"
               onClick={startHosting}
-              disabled={status === "Solicitando compartilhamento de tela…"}
+              disabled={isStarting}
+              aria-busy={isStarting}
             >
               <span className="button-icon" aria-hidden="true">
                 ↗
               </span>
-              Compartilhar minha tela
+              {isStarting ? "Escolha a tela para compartilhar…" : "Compartilhar minha tela"}
             </button>
+          )}
+          {!isHost && !isWatching && (
+            <form className="join-room" onSubmit={(event) => { event.preventDefault(); openRoom(); }}>
+              <label htmlFor="room-link">Recebeu um convite?</label>
+              <div className="join-room-fields">
+                <input id="room-link" type="text" value={roomInput}
+                  onChange={(event) => setRoomInput(event.target.value)}
+                  placeholder="Cole o link ou código da sala" required disabled={isStarting}
+                  autoComplete="off" spellCheck={false} />
+                <button className="copy-button" type="submit" disabled={isStarting}>Assistir →</button>
+              </div>
+            </form>
           )}
           {isHost && (
             <button
@@ -753,7 +806,7 @@ export default function StreamApp() {
               className="primary-button"
               onClick={joinStream}
               disabled={
-                status === "Conectando à transmissão…" ||
+                hasJoinedRoom || status === "Conectando à transmissão…" ||
                 status === "Entrando na sala…"
               }
             >
@@ -890,7 +943,7 @@ export default function StreamApp() {
             )}
           </div>
           <div className="screen-footer">
-            <span className="status-label">
+            <span className="status-label" role="status" aria-live="polite">
               <span className={isHost || remoteStream ? "status-pulse" : "status-idle"} />
               {status}
             </span>

@@ -23,7 +23,7 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
 button,
@@ -351,6 +351,58 @@ h1 span {
   margin-top: 20px;
   color: #89928d;
   font-size: 11px;
+}
+
+.join-room {
+  max-width: 410px;
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+
+.join-room label {
+  display: block;
+  margin-bottom: 9px;
+  color: #536159;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.join-room-fields {
+  display: flex;
+  gap: 8px;
+}
+
+.join-room input {
+  min-width: 0;
+  width: 100%;
+  min-height: 40px;
+  padding: 10px 12px;
+  border: 1px solid #d7dfd8;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+.join-room input:focus-visible {
+  outline: 2px solid #95c4a9;
+  outline-offset: 2px;
+}
+
+.join-room .copy-button { height: auto; }
+
+@media (max-width: 800px) {
+  .join-room { margin-inline: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 .trust-note span {
