@@ -39,11 +39,30 @@ function readSignal(value: unknown): Signal | null {
   if (
     value.type === "candidate" &&
     isRecord(value.candidate) &&
-    typeof value.candidate.candidate === "string"
+    typeof value.candidate.candidate === "string" &&
+    (typeof value.candidate.sdpMid === "string" ||
+      (typeof value.candidate.sdpMLineIndex === "number" &&
+        Number.isInteger(value.candidate.sdpMLineIndex)))
   ) {
+    const candidate: RTCIceCandidateInit = {
+      candidate: value.candidate.candidate,
+    };
+    if (typeof value.candidate.sdpMid === "string") {
+      candidate.sdpMid = value.candidate.sdpMid;
+    }
+    if (
+      typeof value.candidate.sdpMLineIndex === "number" &&
+      Number.isInteger(value.candidate.sdpMLineIndex)
+    ) {
+      candidate.sdpMLineIndex = value.candidate.sdpMLineIndex;
+    }
+    if (typeof value.candidate.usernameFragment === "string") {
+      candidate.usernameFragment = value.candidate.usernameFragment;
+    }
+
     return {
       type: "candidate",
-      candidate: { candidate: value.candidate.candidate },
+      candidate,
     };
   }
 
