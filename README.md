@@ -14,7 +14,7 @@ O compartilhamento de tela precisa de uma conexão segura (`https://`) ou `local
 
 ## Limites do MVP
 
-- O vídeo é enviado diretamente do computador transmissor a cada espectador. O upload exigido cresce com a audiência; o app não usa um servidor de mídia (SFU).
+- O vídeo é enviado diretamente do computador transmissor a cada espectador. O app limita a captura a até 1080p/30 FPS e o envio de vídeo a 2,5 Mbps por espectador para reduzir uso de CPU e rede, priorizando a taxa de quadros. O upload e o trabalho de codificação ainda crescem com a audiência; o app não usa um servidor de mídia (SFU).
 - O áudio da tela/aba é opcional e depende de o navegador oferecê-lo e de o transmissor selecioná-lo. O microfone não é solicitado.
 - A configuração usa STUN público, sem TURN. Algumas redes, VPNs ou firewalls podem impedir a conexão direta.
 - Salas usam identificadores aleatórios e ficam abertas a qualquer pessoa com o link. Não há autenticação, senha, gravação ou controle de acesso.

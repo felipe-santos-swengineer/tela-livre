@@ -225,10 +225,16 @@ export default function StreamApp() {
     try {
       const supabase = getSupabase();
       const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { frameRate: { ideal: 30 } },
+        video: {
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 },
+          frameRate: { ideal: 30, max: 30 },
+        },
         audio: true,
       });
       capturedStream = stream;
+      const screenTrack = stream.getVideoTracks()[0];
+      if (screenTrack) screenTrack.contentHint = "motion";
       localStreamRef.current = stream;
       const newRoomId = crypto.randomUUID();
       const participantId = "host";
@@ -257,7 +263,28 @@ export default function StreamApp() {
         const peer = new RTCPeerConnection({ iceServers });
         peersRef.current.set(viewerId, peer);
         setViewerCount(peersRef.current.size);
-        stream.getTracks().forEach((track) => peer.addTrack(track, stream));
+        for (const track of stream.getTracks()) {
+          const sender = peer.addTrack(track, stream);
+          if (track.kind === "video") {
+            const parameters = sender.getParameters();
+            parameters.encodings = [
+              {
+                ...parameters.encodings?.[0],
+                maxBitrate: 2_500_000,
+                maxFramerate: 30,
+              },
+            ];
+            parameters.degradationPreference = "maintain-framerate";
+            try {
+              await sender.setParameters(parameters);
+            } catch (encodingError) {
+              console.warn(
+                "O navegador não aplicou o perfil de transmissão otimizado:",
+                encodingError,
+              );
+            }
+          }
+        }
         peer.onicecandidate = (event) => {
           if (event.candidate) {
             void send("signal", {
