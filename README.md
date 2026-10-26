@@ -1,4 +1,4 @@
-# TelaLivre
+# Tela Livre
 
 Aplicação Next.js para compartilhar uma tela ao vivo por um link. O vídeo usa WebRTC ponto a ponto; o Supabase Realtime é usado somente para coordenar a conexão entre transmissor e espectadores.
 
@@ -27,6 +27,10 @@ Para público maior e conexão mais confiável, o próximo passo é usar um SFU 
 O workflow em `.github/workflows/deploy-pages.yml` compila a aplicação como site estático e publica cada atualização da branch `master` no GitHub Pages. Após o primeiro push, confirme em **Settings → Pages** que a fonte é **GitHub Actions**.
 
 Como o repositório usa Pages no formato `usuario.github.io/nome-do-repositorio`, o workflow configura o caminho base automaticamente. Os links de transmissão incluem esse caminho.
+
+Repositório: https://github.com/felipe-santos-swengineer/tela-livre
+
+Aplicação: https://felipe-santos-swengineer.github.io/tela-livre/
 
 Configure estas variáveis em **Settings → Secrets and variables → Actions → Variables**:
 

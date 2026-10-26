@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TelaLivre — compartilhe sua tela ao vivo",
+  title: "Tela Livre — compartilhe sua tela ao vivo",
   description:
     "Compartilhe sua tela ao vivo com um link, direto do navegador e sem downloads.",
 };

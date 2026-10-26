@@ -636,11 +636,11 @@ export default function StreamApp() {
   return (
     <main className="app-shell">
       <header className="topbar">
-        <Link className="brand" href="/" aria-label="TelaLivre início">
+        <Link className="brand" href="/" aria-label="Tela Livre início">
           <span className="brand-mark" aria-hidden="true">
             <span />
           </span>
-          <span>telalivre</span>
+          <span>tela livre</span>
         </Link>
         <span className="topbar-note">
           <span className="online-dot" />
@@ -1025,7 +1025,7 @@ export default function StreamApp() {
           <span className="brand-mark" aria-hidden="true">
             <span />
           </span>
-          <span>telalivre</span>
+          <span>tela livre</span>
         </Link>
         <span>Feito para compartilhar ideias, não complicações.</span>
       </footer>
