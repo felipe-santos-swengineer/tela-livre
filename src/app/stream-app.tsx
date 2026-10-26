@@ -226,7 +226,7 @@ export default function StreamApp() {
       const supabase = getSupabase();
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: { frameRate: { ideal: 30 } },
-        audio: false,
+        audio: true,
       });
       capturedStream = stream;
       localStreamRef.current = stream;
@@ -725,6 +725,7 @@ export default function StreamApp() {
                 autoPlay
                 playsInline
                 muted={isHost}
+                controls={isWatching && Boolean(remoteStream)}
                 className="shared-video"
               />
             )}
@@ -777,6 +778,26 @@ export default function StreamApp() {
               <span className={isHost || remoteStream ? "status-pulse" : "status-idle"} />
               {status}
             </span>
+            {(isHost || remoteStream) && (
+              <span className="audio-status">
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path
+                    d="M3 8v4h3l4 3V5L6 8H3Zm10-1a4 4 0 0 1 0 6m2-8a7 7 0 0 1 0 10"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                {isHost
+                  ? localStream?.getAudioTracks().length
+                    ? "Áudio da tela incluído"
+                    : "Sem áudio da tela"
+                  : remoteStream?.getAudioTracks().length
+                    ? "Áudio disponível"
+                    : "Sem áudio"}
+              </span>
+            )}
             {isHost && (
               <span className="viewer-count">
                 <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">

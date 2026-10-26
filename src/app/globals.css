@@ -461,6 +461,20 @@ h1 span {
   color: #8a958e;
 }
 
+.audio-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #7b867f;
+  font-size: 10px;
+}
+
+.audio-status svg {
+  width: 15px;
+  height: 15px;
+  color: var(--green);
+}
+
 .share-row {
   display: flex;
   align-items: center;
@@ -738,7 +752,8 @@ h1 span {
   }
 
   .status-label,
-  .viewer-count {
+  .viewer-count,
+  .audio-status {
     gap: 5px;
     font-size: 9px;
   }

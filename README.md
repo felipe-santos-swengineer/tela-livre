@@ -10,12 +10,12 @@ Aplicação Next.js para compartilhar uma tela ao vivo por um link. O vídeo usa
 4. No painel do Supabase, habilite **Realtime** para o projeto.
 5. Execute `npm run dev` e abra `http://localhost:3000`.
 
-O compartilhamento de tela precisa de uma conexão segura (`https://`) ou `localhost`. O navegador solicitará autorização para cada transmissão.
+O compartilhamento de tela precisa de uma conexão segura (`https://`) ou `localhost`. O navegador solicitará autorização para cada transmissão. O app também pede áudio da tela/aba, mas não solicita nem envia o microfone. Para transmitir o áudio, selecione uma aba ou opção de compartilhamento de áudio na janela do navegador; a disponibilidade varia por navegador e sistema. O indicador na prévia informa se a captura incluiu áudio, e os controles do vídeo do espectador permitem iniciar a reprodução com som quando o navegador bloquear autoplay.
 
 ## Limites do MVP
 
 - O vídeo é enviado diretamente do computador transmissor a cada espectador. O upload exigido cresce com a audiência; o app não usa um servidor de mídia (SFU).
-- O áudio do computador ainda não é transmitido.
+- O áudio da tela/aba é opcional e depende de o navegador oferecê-lo e de o transmissor selecioná-lo. O microfone não é solicitado.
 - A configuração usa STUN público, sem TURN. Algumas redes, VPNs ou firewalls podem impedir a conexão direta.
 - Salas usam identificadores aleatórios e ficam abertas a qualquer pessoa com o link. Não há autenticação, senha, gravação ou controle de acesso.
 - O Supabase Realtime coordena as conexões; configure os limites do seu projeto antes de usar com uma audiência real.
