@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TelaLivre
 
-## Getting Started
+Aplicação Next.js para compartilhar uma tela ao vivo por um link. O vídeo usa WebRTC ponto a ponto; o Supabase Realtime é usado somente para coordenar a conexão entre transmissor e espectadores.
 
-First, run the development server:
+## Rodar localmente
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Crie um projeto no [Supabase](https://supabase.com/).
+2. Em **Project Settings → API Keys**, copie a Project URL e uma chave publicável (`sb_publishable_...`).
+3. Crie `.env.local` a partir de `.env.example` e preencha os dois valores.
+4. No painel do Supabase, habilite **Realtime** para o projeto.
+5. Execute `npm run dev` e abra `http://localhost:3000`.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+O compartilhamento de tela precisa de uma conexão segura (`https://`) ou `localhost`. O navegador solicitará autorização para cada transmissão.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Limites do MVP
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- O vídeo é enviado diretamente do computador transmissor a cada espectador. O upload exigido cresce com a audiência; o app não usa um servidor de mídia (SFU).
+- O áudio do computador ainda não é transmitido.
+- A configuração usa STUN público, sem TURN. Algumas redes, VPNs ou firewalls podem impedir a conexão direta.
+- Salas usam identificadores aleatórios e ficam abertas a qualquer pessoa com o link. Não há autenticação, senha, gravação ou controle de acesso.
+- O Supabase Realtime coordena as conexões; configure os limites do seu projeto antes de usar com uma audiência real.
 
-## Learn More
+Para público maior e conexão mais confiável, o próximo passo é usar um SFU (por exemplo, LiveKit) com emissão segura de tokens no backend. Hospedar a página gratuitamente não fornece, por si só, infraestrutura de vídeo.
 
-To learn more about Next.js, take a look at the following resources:
+## Publicar no GitHub Pages
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+O workflow em `.github/workflows/deploy-pages.yml` compila a aplicação como site estático e publica cada atualização da branch `master` no GitHub Pages. Após o primeiro push, confirme em **Settings → Pages** que a fonte é **GitHub Actions**.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Como o repositório usa Pages no formato `usuario.github.io/nome-do-repositorio`, o workflow configura o caminho base automaticamente. Os links de transmissão incluem esse caminho.
 
-## Deploy on Vercel
+Configure estas variáveis em **Settings → Secrets and variables → Actions → Variables**:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+São variáveis públicas usadas no navegador, não coloque chaves `secret` ou `service_role` nelas. O app ainda aceita `NEXT_PUBLIC_SUPABASE_ANON_KEY` para projetos com as chaves JWT antigas.
+
+Para desenvolvimento local, configure as mesmas variáveis em `.env.local` e execute `npm run dev`. Para outros hosts que suportem Next.js, remova `output: "export"` e configure o build como aplicação Next.js.
