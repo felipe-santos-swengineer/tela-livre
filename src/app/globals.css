@@ -165,6 +165,127 @@ h1 span {
   line-height: 1.75;
 }
 
+.transmission-settings {
+  display: grid;
+  gap: 14px;
+  max-width: 410px;
+  margin: 0 0 20px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgb(255 255 255 / 62%);
+  text-align: left;
+}
+
+.settings-title {
+  color: #536159;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.settings-selects {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.setting-field {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  color: #748079;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.setting-field select {
+  width: 100%;
+  min-height: 37px;
+  padding: 0 25px 0 9px;
+  border: 1px solid #e0e5e0;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 10px;
+}
+
+.setting-field select:focus-visible,
+.audio-toggle input:focus-visible + .audio-toggle-track {
+  outline: 2px solid #95c4a9;
+  outline-offset: 2px;
+}
+
+.audio-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.audio-toggle input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.audio-toggle-track {
+  position: relative;
+  width: 32px;
+  height: 19px;
+  flex: 0 0 32px;
+  border-radius: 999px;
+  background: #c4ccc6;
+  transition: background 160ms ease;
+}
+
+.audio-toggle-track > span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(23 33 29 / 18%);
+  transition: transform 160ms ease;
+}
+
+.audio-toggle input:checked + .audio-toggle-track {
+  background: var(--green);
+}
+
+.audio-toggle input:checked + .audio-toggle-track > span {
+  transform: translateX(13px);
+}
+
+.audio-toggle-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.audio-toggle-copy strong {
+  color: #536159;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.audio-toggle-copy > span {
+  color: #89928d;
+  font-size: 10px;
+}
+
+.settings-hint {
+  margin: -4px 0 0;
+  color: #89928d;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
 .primary-button,
 .copy-button,
 .end-button {
@@ -666,6 +787,11 @@ h1 span {
     text-align: center;
   }
 
+  .transmission-settings {
+    margin-right: auto;
+    margin-left: auto;
+  }
+
   .eyebrow,
   .trust-note {
     justify-content: center;
@@ -710,6 +836,10 @@ h1 span {
 
   .hero {
     padding-top: 52px;
+  }
+
+  .settings-selects {
+    grid-template-columns: 1fr;
   }
 
   .steps {

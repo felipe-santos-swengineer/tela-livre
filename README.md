@@ -10,11 +10,11 @@ Aplicação Next.js para compartilhar uma tela ao vivo por um link. O vídeo usa
 4. No painel do Supabase, habilite **Realtime** para o projeto.
 5. Execute `npm run dev` e abra `http://localhost:3000`.
 
-O compartilhamento de tela precisa de uma conexão segura (`https://`) ou `localhost`. O navegador solicitará autorização para cada transmissão. O app também pede áudio da tela/aba, mas não solicita nem envia o microfone. Para transmitir o áudio, selecione uma aba ou opção de compartilhamento de áudio na janela do navegador; a disponibilidade varia por navegador e sistema. O indicador na prévia informa se a captura incluiu áudio, e os controles do vídeo do espectador permitem iniciar a reprodução com som quando o navegador bloquear autoplay.
+O compartilhamento de tela precisa de uma conexão segura (`https://`) ou `localhost`. Antes de transmitir, o host pode escolher resolução, FPS e se deseja incluir o áudio da tela/aba. O perfil padrão é 720p/30 FPS para reduzir travamentos. O app nunca solicita nem envia o microfone. A captura de áudio depende do navegador e da aba/opção escolhida na janela de compartilhamento.
 
 ## Limites do MVP
 
-- O vídeo é enviado diretamente do computador transmissor a cada espectador. O app limita a captura a até 1080p/30 FPS e o envio de vídeo a 2,5 Mbps por espectador para reduzir uso de CPU e rede, priorizando a taxa de quadros. O upload e o trabalho de codificação ainda crescem com a audiência; o app não usa um servidor de mídia (SFU).
+- O vídeo é enviado diretamente do computador transmissor a cada espectador. A captura pode ser configurada até 1080p/60 FPS e o bitrate máximo por espectador varia conforme o perfil (2–4,5 Mbps). Perfis mais altos podem exigir mais CPU e upload; o trabalho de codificação também cresce com a audiência. O app não usa um servidor de mídia (SFU).
 - O áudio da tela/aba é opcional e depende de o navegador oferecê-lo e de o transmissor selecioná-lo. O microfone não é solicitado.
 - A configuração usa STUN público, sem TURN. Algumas redes, VPNs ou firewalls podem impedir a conexão direta.
 - Salas usam identificadores aleatórios e ficam abertas a qualquer pessoa com o link. Não há autenticação, senha, gravação ou controle de acesso.

@@ -6,6 +6,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 type Mode = "home" | "host" | "watch";
+type Resolution = "720p" | "1080p";
+type FrameRate = 15 | 30 | 60;
 type Signal =
   | { type: "offer" | "answer"; sdp: RTCSessionDescriptionInit }
   | { type: "candidate"; candidate: RTCIceCandidateInit };
@@ -96,6 +98,9 @@ export default function StreamApp() {
   const [status, setStatus] = useState(
     initialRoom ? "Transmissão pronta para assistir" : "Pronto para começar",
   );
+  const [resolution, setResolution] = useState<Resolution>("720p");
+  const [frameRate, setFrameRate] = useState<FrameRate>(30);
+  const [includeAudio, setIncludeAudio] = useState(true);
   const [error, setError] = useState("");
   const [viewerCount, setViewerCount] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -221,20 +226,24 @@ export default function StreamApp() {
     setError("");
     setStatus("Solicitando compartilhamento de tela…");
     let capturedStream: MediaStream | null = null;
+    const captureWidth = resolution === "720p" ? 1280 : 1920;
+    const captureHeight = resolution === "720p" ? 720 : 1080;
 
     try {
       const supabase = getSupabase();
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
-          width: { ideal: 1280, max: 1920 },
-          height: { ideal: 720, max: 1080 },
-          frameRate: { ideal: 30, max: 30 },
+          width: { ideal: captureWidth, max: captureWidth },
+          height: { ideal: captureHeight, max: captureHeight },
+          frameRate: { ideal: frameRate, max: frameRate },
         },
-        audio: true,
+        audio: includeAudio,
       });
       capturedStream = stream;
       const screenTrack = stream.getVideoTracks()[0];
-      if (screenTrack) screenTrack.contentHint = "motion";
+      if (screenTrack) {
+        screenTrack.contentHint = frameRate >= 30 ? "motion" : "detail";
+      }
       localStreamRef.current = stream;
       const newRoomId = crypto.randomUUID();
       const participantId = "host";
@@ -270,8 +279,15 @@ export default function StreamApp() {
             parameters.encodings = [
               {
                 ...parameters.encodings?.[0],
-                maxBitrate: 2_500_000,
-                maxFramerate: 30,
+                maxBitrate:
+                  resolution === "1080p"
+                    ? frameRate === 60
+                      ? 4_500_000
+                      : 3_000_000
+                    : frameRate === 60
+                      ? 3_000_000
+                      : 2_000_000,
+                maxFramerate: frameRate,
               },
             ];
             parameters.degradationPreference = "maintain-framerate";
@@ -647,6 +663,68 @@ export default function StreamApp() {
             Comece uma transmissão e compartilhe o link. Sem downloads para
             quem vai assistir.
           </p>
+          {!isHost && !isWatching && (
+            <div className="transmission-settings">
+              <span className="settings-title">Configurações da transmissão</span>
+              <div className="settings-selects">
+                <label className="setting-field">
+                  <span>Resolução</span>
+                  <select
+                    value={resolution}
+                    onChange={(event) => {
+                      if (
+                        event.target.value === "720p" ||
+                        event.target.value === "1080p"
+                      ) {
+                        setResolution(event.target.value);
+                      }
+                    }}
+                  >
+                    <option value="720p">720p — menor uso de rede</option>
+                    <option value="1080p">1080p — mais definição</option>
+                  </select>
+                </label>
+                <label className="setting-field">
+                  <span>Quadros por segundo</span>
+                  <select
+                    value={frameRate}
+                    onChange={(event) => {
+                      const selectedRate = Number(event.target.value);
+                      if (
+                        selectedRate === 15 ||
+                        selectedRate === 30 ||
+                        selectedRate === 60
+                      ) {
+                        setFrameRate(selectedRate);
+                      }
+                    }}
+                  >
+                    <option value={15}>15 FPS — menor carga</option>
+                    <option value={30}>30 FPS — recomendado</option>
+                    <option value={60}>60 FPS — mais fluido</option>
+                  </select>
+                </label>
+              </div>
+              <label className="audio-toggle">
+                <input
+                  type="checkbox"
+                  checked={includeAudio}
+                  onChange={(event) => setIncludeAudio(event.target.checked)}
+                />
+                <span className="audio-toggle-track" aria-hidden="true">
+                  <span />
+                </span>
+                <span className="audio-toggle-copy">
+                  <strong>Áudio da tela</strong>
+                  <span>Não inclui o microfone</span>
+                </span>
+              </label>
+              <p className="settings-hint">
+                720p e 30 FPS são recomendados para reduzir travamentos. A
+                disponibilidade de áudio depende do navegador e da aba escolhida.
+              </p>
+            </div>
+          )}
           {!isHost && !isWatching && (
             <button
               className="primary-button"
